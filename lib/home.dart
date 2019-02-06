@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './dropbox.dart';
 import 'dart:async';
+import './properties.dart';
 
 const String SUCCESS_TEXT = "Success!";
 const String FAILURE_TEXT = "Failure";
@@ -18,6 +19,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String _status = '';
   bool _isBusy = false;
+  Property dropboxOrgFilePath = new Property('dropboxOrgFilePath');
+
   final TextEditingController _txtControl = new TextEditingController();
 
   @override
@@ -64,54 +67,75 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Container(
-          margin: const EdgeInsets.all(10.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              TextField(
-                decoration: InputDecoration(hintText: INPUT_PLACEHOLDER),
-                controller: _txtControl,
-                enabled: !_isBusy,
-              ),
-              Padding(
-                padding: EdgeInsets.all(10.0),
-              ),
-              Visibility(
-                visible: !_isBusy,
-                child: IconButton(
-                  icon: Icon(Icons.add),
-                  tooltip: 'Add Todo',
-                  onPressed: submitTodoState,
-                  iconSize: 48,
-                  color: Colors.blue,
-                ),
-              ),
-              Visibility(
-                  visible: _isBusy,
-                  child: CircularProgressIndicator(
-                    value: null,
-                  )),
-              AnimatedOpacity(
-                  opacity: _status.length > 0 ? 1.0 : 0.0,
-                  duration: Duration(milliseconds: 500),
-                  child: Text(
-                    _status,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                      color:
-                          _status == SUCCESS_TEXT ? Colors.green : Colors.red,
-                    ),
-                  )),
-            ],
-          ),
+        appBar: AppBar(
+          title: Text(widget.title),
         ),
-      ),
-    );
+        body: Center(
+          child: Container(
+            margin: const EdgeInsets.all(10.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                TextField(
+                  decoration: InputDecoration(hintText: INPUT_PLACEHOLDER),
+                  controller: _txtControl,
+                  enabled: !_isBusy,
+                ),
+                Padding(
+                  padding: EdgeInsets.all(10.0),
+                ),
+                Visibility(
+                  visible: !_isBusy,
+                  child: IconButton(
+                    icon: Icon(Icons.add),
+                    tooltip: 'Add Todo',
+                    onPressed: submitTodoState,
+                    iconSize: 48,
+                    color: Colors.blue,
+                  ),
+                ),
+                Visibility(
+                    visible: _isBusy,
+                    child: CircularProgressIndicator(
+                      value: null,
+                    )),
+                AnimatedOpacity(
+                    opacity: _status.length > 0 ? 1.0 : 0.0,
+                    duration: Duration(milliseconds: 500),
+                    child: Text(
+                      _status,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 28,
+                        color:
+                            _status == SUCCESS_TEXT ? Colors.green : Colors.red,
+                      ),
+                    )),
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 30.0),
+                ),
+                Row(
+                  children: <Widget>[
+                    Text('Syncing to',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        )),
+                    Padding(
+                        padding: EdgeInsets.only(left: 20.0),
+                        child: Text(dropboxOrgFilePath.value,
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            )))
+                  ],
+                )
+              ],
+            ),
+          ),
+        ));
   }
 }
