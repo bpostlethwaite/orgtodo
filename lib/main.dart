@@ -4,19 +4,19 @@ import './properties.dart';
 
 void main() async {
   await Property.init();
-  runApp(MyApp());
+  runApp(OrgTodo());
 }
 
-class MyApp extends StatelessWidget {
+class OrgTodo extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'OrgTodo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Simple Todo'),
+      home: HomePage(title: 'OrgTodo'),
     );
   }
 }

@@ -34,11 +34,11 @@ class Status {
 
 class Dropbox {
   Property token;
-  Property path;
+  Property dropboxOrgFilePath;
 
   Dropbox() {
     this.token = new Property('accessToken');
-    this.path = new Property('dropboxOrgFilePath');
+    this.dropboxOrgFilePath = new Property('dropboxOrgFilePath');
   }
 
   Future<Status> responseStatus(HttpClientResponse res) async {
@@ -49,7 +49,8 @@ class Dropbox {
     return Status(res.statusCode, msg);
   }
 
-  Future<Status> dropboxRequest(String domain, String urlPath, String arg) async {
+  Future<Status> dropboxRequest(
+      String domain, String urlPath, String arg) async {
     var uri = new Uri.https(domain, urlPath);
     var request = await new HttpClient().postUrl(uri);
     request.headers.add('Authorization', 'Bearer ${token.value}');
@@ -65,20 +66,20 @@ class Dropbox {
   }
 
   Future<Status> getFileMetaData() async {
-    final arg = json.encode({'path': path.value});
+    final arg = json.encode({'path': dropboxOrgFilePath.value});
     return await dropboxRequest(
         'api.dropboxapi.com', '/2/files/get_metadata', arg);
   }
 
   Future<Status> loadFileContent() async {
-    final arg = json.encode({'path': path.value});
+    final arg = json.encode({'path': dropboxOrgFilePath.value});
     return await dropboxRequest(
         'content.dropboxapi.com', '/2/files/download', arg);
   }
 
   Future<Status> uploadFile(String content, String rev) async {
     final arg = json.encode({
-      'path': path.value,
+      'path': dropboxOrgFilePath.value,
       'mode': {'.tag': 'update', 'update': rev},
     });
     var uri = new Uri.https('content.dropboxapi.com', '/2/files/upload');

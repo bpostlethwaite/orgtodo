@@ -4,17 +4,18 @@ import 'dart:async';
 
 const String SUCCESS_TEXT = "Success!";
 const String FAILURE_TEXT = "Failure";
+const String INPUT_PLACEHOLDER = 'Enter Todo';
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+class HomePage extends StatefulWidget {
+  HomePage({Key key, this.title}) : super(key: key);
 
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _HomePageState extends State<HomePage> {
   String _status = '';
   bool _isBusy = false;
   final TextEditingController _txtControl = new TextEditingController();
@@ -73,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               TextField(
-                decoration: InputDecoration(hintText: 'Enter ToDo'),
+                decoration: InputDecoration(hintText: INPUT_PLACEHOLDER),
                 controller: _txtControl,
                 enabled: !_isBusy,
               ),
