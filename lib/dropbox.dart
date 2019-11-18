@@ -117,7 +117,8 @@ class Dropbox {
     var scheduleLine = 'SCHEDULED: <${formatDateAsOrg(getNextWeekday())}>';
     lines.add(scheduleLine);
 
-    Status uploadStatus = await uploadFile(lines.join('\n'), rev);
+    String content = lines.join('\n');
+    Status uploadStatus = await uploadFile(content, rev);
     debugPrint('uploadStatus: $uploadStatus');
 
     return uploadStatus;

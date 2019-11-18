@@ -46,11 +46,13 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _status = '';
       _isBusy = true;
+      todos = null;
     });
     if (todoText.length > 1) {
       Status status;
       try {
         status = await Dropbox().addTodo(todoText);
+        todos = fetchTodos();
       } catch (e) {
         status = Status(999, e.toString());
       }
@@ -75,6 +77,17 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> refreshTodos() async {
+    setState(() {
+      _isBusy = true;
+      todos = null;
+    });
+    setState(() {
+      todos = fetchTodos();
+      _isBusy = false;
+    });
+  }
+
   Widget todoWidget() {
     return FutureBuilder<List<Todo>>(
       future: todos,
@@ -87,14 +100,16 @@ class _HomePageState extends State<HomePage> {
           case ConnectionState.done:
             if (snapshot.hasError)
               return Text('Error: ${snapshot.error}');
-            return ListView(
-              padding: const EdgeInsets.all(8),
-              children: snapshot.data.map((todo) => Container(
+            return RefreshIndicator(
+              onRefresh: refreshTodos,
+              child: ListView(
+                padding: const EdgeInsets.all(8),
+                children: snapshot.data.map((todo) => Container(
                 height: 50,
                 child: Text(todo.text),
               ),
               ).toList(),
-            );
+            ));
         }
         return null; // unreachable
       },
@@ -161,11 +176,11 @@ class _HomePageState extends State<HomePage> {
                         fontWeight: FontWeight.bold,
                         fontSize: 28,
                         color:
-                            _status == SUCCESS_TEXT ? Colors.green : Colors.red,
+                            _status == SUCCESS_TEXT ? Colors.green : Colors.deepOrange,
                       ),
                     )),
                 Padding(
-                  padding: EdgeInsets.symmetric(vertical: 30.0),
+                  padding: EdgeInsets.symmetric(vertical: 10.0),
                 ),
                 Expanded(
                   child: todoWidget(),

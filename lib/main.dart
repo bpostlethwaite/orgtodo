@@ -13,9 +13,7 @@ class OrgTodo extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'OrgTodo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData.dark(),
       home: HomePage(title: 'OrgTodo'),
     );
   }

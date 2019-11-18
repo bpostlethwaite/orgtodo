@@ -33,7 +33,7 @@ class CloudAPI {
       }
       List<dynamic> parsedJson = jsonDecode(resp.body);
       List<Todo> todos = parsedJson.map((i) => Todo.fromJson(i)).toList();
-      return todos;
+      return todos.reversed.toList();
     });
   }
 }
