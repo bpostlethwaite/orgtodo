@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import './dropbox.dart';
 import 'dart:async';
 import './properties.dart';
+import './cloudapi.dart';
+import 'package:flutter/foundation.dart';
 
 const String SUCCESS_TEXT = "Success!";
 const String FAILURE_TEXT = "Failure";
 const String INPUT_PLACEHOLDER = 'Enter Todo';
+
+
 
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
@@ -20,6 +24,7 @@ class _HomePageState extends State<HomePage> {
   String _status = '';
   bool _isBusy = false;
   Property dropboxOrgFilePath = new Property('dropboxOrgFilePath');
+  Future<List<Todo>> todos;
 
   final TextEditingController _txtControl = new TextEditingController();
 
@@ -28,6 +33,12 @@ class _HomePageState extends State<HomePage> {
     // Clean up the controller when the Widget is removed from the Widget tree
     this._txtControl.dispose();
     super.dispose();
+  }
+
+  @override
+  initState() {
+    super.initState();
+    todos = fetchTodos();
   }
 
   void submitTodoState() async {
@@ -64,17 +75,59 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Widget todoWidget() {
+    return FutureBuilder<List<Todo>>(
+      future: todos,
+      builder: (BuildContext context, AsyncSnapshot<List<Todo>> snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+          case ConnectionState.active:
+          case ConnectionState.waiting:
+            return Container();
+          case ConnectionState.done:
+            if (snapshot.hasError)
+              return Text('Error: ${snapshot.error}');
+            return ListView(
+              padding: const EdgeInsets.all(8),
+              children: snapshot.data.map((todo) => Container(
+                height: 50,
+                child: Text(todo.text),
+              ),
+              ).toList(),
+            );
+        }
+        return null; // unreachable
+      },
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(widget.title),
+          title:Row(
+            children: <Widget>[
+              Text(widget.title),
+              Padding(
+                padding: EdgeInsets.only(left:20.0),
+                child: Text('Syncing to',
+                  style: TextStyle(
+                    fontSize: 12,
+                  ))),
+              Padding(
+                  padding: EdgeInsets.only(left: 10.0),
+                  child: Text(dropboxOrgFilePath.value,
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        fontSize: 12,
+                      )))
+            ],
+          ),
         ),
-        body: Center(
-          child: Container(
+        body: Container(
             margin: const EdgeInsets.all(10.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 TextField(
                   decoration: InputDecoration(hintText: INPUT_PLACEHOLDER),
@@ -114,28 +167,12 @@ class _HomePageState extends State<HomePage> {
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 30.0),
                 ),
-                Row(
-                  children: <Widget>[
-                    Text('Syncing to',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        )),
-                    Padding(
-                        padding: EdgeInsets.only(left: 20.0),
-                        child: Text(dropboxOrgFilePath.value,
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            )))
-                  ],
+                Expanded(
+                  child: todoWidget(),
                 )
               ],
             ),
           ),
-        ));
+        );
   }
 }
