@@ -96,7 +96,7 @@ class Dropbox {
     return responseStatus(response);
   }
 
-  Future<Status> addTodo(todoText) async {
+  Future<Status> mutateTodos(String Function(String) transform) async {
     Status metaStatus = await getFileMetaData();
     debugPrint('metaStatus: $metaStatus');
     if (!metaStatus.isOK()) {
@@ -110,18 +110,45 @@ class Dropbox {
     if (!contentStatus.isOK()) {
       return contentStatus;
     }
-    var lines = contentStatus.msg.split('/n');
-    var todoLine = '* TODO $todoText';
-    lines.add(todoLine);
 
-    var scheduleLine = 'SCHEDULED: <${formatDateAsOrg(getNextWeekday())}>';
-    lines.add(scheduleLine);
+    var content = transform(contentStatus.msg);
 
-    String content = lines.join('\n');
     Status uploadStatus = await uploadFile(content, rev);
     debugPrint('uploadStatus: $uploadStatus');
 
     return uploadStatus;
+  }
+
+  Future<Status> markTodoAsDone(todoText) async {
+    return mutateTodos((orgText) {
+      LineSplitter ls = new LineSplitter();
+      List<String> lines = ls.convert(orgText);
+      for (int i = 0; i < lines.length; i++) {
+        if (lines[i].contains(todoText) && lines[i].contains("TODO")) {
+          debugPrint("REPLACING LINES");
+          debugPrint("****: " + todoText);
+          lines[i] = lines[i].replaceFirst("TODO", "DONE");
+          debugPrint(lines[i]);
+          break;
+        }
+      }
+      return lines.join('\n');
+    });
+
+  }
+
+  Future<Status> addTodo(todoText) async {
+    return mutateTodos((orgText) {
+      LineSplitter ls = new LineSplitter();
+      List<String> lines = ls.convert(orgText);
+      var todoLine = '* TODO $todoText';
+      var scheduleLine = 'SCHEDULED: <${formatDateAsOrg(getNextWeekday())}>';
+
+      lines.add(todoLine);
+      lines.add(scheduleLine);
+
+      return lines.join('\n');
+    });
   }
 }
 

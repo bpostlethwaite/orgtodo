@@ -9,8 +9,6 @@ const String SUCCESS_TEXT = "Success!";
 const String FAILURE_TEXT = "Failure";
 const String INPUT_PLACEHOLDER = 'Enter Todo';
 
-
-
 class HomePage extends StatefulWidget {
   HomePage({Key key, this.title}) : super(key: key);
 
@@ -21,8 +19,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String _status = '';
   bool _isBusy = false;
+  bool _todoTextActive = false;
   Property dropboxOrgFilePath = new Property('dropboxOrgFilePath');
   Future<List<Todo>> todos;
 
@@ -38,42 +36,62 @@ class _HomePageState extends State<HomePage> {
   @override
   initState() {
     super.initState();
+    _txtControl.addListener(setTodoTextActive);
     todos = fetchTodos();
+  }
+
+  void setTodoTextActive() {
+    if (_todoTextActive && _txtControl.text.length == 0) {
+      setState(() {
+        _todoTextActive = false;
+      });
+    } else if (!_todoTextActive && _txtControl.text.length > 0) {
+      setState(() {
+        _todoTextActive = true;
+      });
+    }
   }
 
   void submitTodoState() async {
     var todoText = _txtControl.text;
-    setState(() {
-      _status = '';
-      _isBusy = true;
-      todos = null;
-    });
-    if (todoText.length > 1) {
-      Status status;
+    if (todoText.length > 0) {
+      setState(() {
+        _isBusy = true;
+        todos = null;
+      });
       try {
-        status = await Dropbox().addTodo(todoText);
+        await Dropbox().addTodo(todoText);
         todos = fetchTodos();
       } catch (e) {
-        status = Status(999, e.toString());
+        debugPrint(e.toString());
       }
       setState(() {
-        if (status.isOK()) {
-          _status = SUCCESS_TEXT;
-        } else {
-          _status = FAILURE_TEXT;
-        }
         _isBusy = false;
       });
 
       // reset the input box
       _txtControl.clear();
+    }
+  }
 
-      // set success / failure animation
-      new Timer(Duration(seconds: 2), () {
-        setState(() {
-          _status = '';
-        });
+  void markTodoDone(String todoText) async {
+    if (todoText.length > 0) {
+      setState(() {
+        _isBusy = true;
+        todos = null;
       });
+      try {
+        await Dropbox().markTodoAsDone(todoText);
+        todos = fetchTodos();
+      } catch (e) {
+        debugPrint(e.toString());
+      }
+      setState(() {
+        _isBusy = false;
+      });
+
+      // reset the input box
+      _txtControl.clear();
     }
   }
 
@@ -88,7 +106,31 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Widget todoWidget() {
+  Widget todoItemWidget(Todo todo) {
+    return ListTile(
+        dense: true,
+        contentPadding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
+        leading: Container(
+          padding: EdgeInsets.only(right: 10.0),
+          decoration: new BoxDecoration(
+              border: new Border(
+                  right: new BorderSide(width: 1.0, color: Colors.white24))),
+          child: IconButton(
+            icon: Icon(Icons.check, color: Colors.grey),
+            onPressed: () => markTodoDone(todo.text),
+          ),
+        ),
+        title: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Text(
+            todo.text,
+            overflow: TextOverflow.clip,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ));
+  }
+
+  Widget todoListWidget() {
     return FutureBuilder<List<Todo>>(
       future: todos,
       builder: (BuildContext context, AsyncSnapshot<List<Todo>> snapshot) {
@@ -98,96 +140,78 @@ class _HomePageState extends State<HomePage> {
           case ConnectionState.waiting:
             return Container();
           case ConnectionState.done:
-            if (snapshot.hasError)
-              return Text('Error: ${snapshot.error}');
+            if (snapshot.hasError) return Text('Error: ${snapshot.error}');
             return RefreshIndicator(
-              onRefresh: refreshTodos,
-              child: ListView(
-                padding: const EdgeInsets.all(8),
-                children: snapshot.data.map((todo) => Container(
-                height: 50,
-                child: Text(todo.text),
-              ),
-              ).toList(),
-            ));
+                onRefresh: refreshTodos,
+                child: ListView(
+                  //padding: const EdgeInsets.all(8),
+                  children: snapshot.data.map(todoItemWidget).toList(),
+                ));
         }
         return null; // unreachable
       },
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title:Row(
-            children: <Widget>[
-              Text(widget.title),
-              Padding(
-                padding: EdgeInsets.only(left:20.0),
+      appBar: AppBar(
+        title: Row(
+          children: <Widget>[
+            Text(widget.title),
+            Padding(
+                padding: EdgeInsets.only(left: 20.0),
                 child: Text('Syncing to',
-                  style: TextStyle(
-                    fontSize: 12,
-                  ))),
-              Padding(
-                  padding: EdgeInsets.only(left: 10.0),
-                  child: Text(dropboxOrgFilePath.value,
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        fontSize: 12,
-                      )))
-            ],
-          ),
+                    style: TextStyle(
+                      fontSize: 12,
+                    ))),
+            Padding(
+                padding: EdgeInsets.only(left: 10.0),
+                child: Text(dropboxOrgFilePath.value,
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      fontSize: 12,
+                    )))
+          ],
         ),
-        body: Container(
-            margin: const EdgeInsets.all(10.0),
-            child: Column(
-              children: <Widget>[
-                TextField(
-                  decoration: InputDecoration(hintText: INPUT_PLACEHOLDER),
-                  controller: _txtControl,
-                  enabled: !_isBusy,
-                ),
-                Padding(
-                  padding: EdgeInsets.all(10.0),
-                ),
-                Visibility(
-                  visible: !_isBusy,
-                  child: IconButton(
-                    icon: Icon(Icons.add),
-                    tooltip: 'Add Todo',
-                    onPressed: submitTodoState,
-                    iconSize: 48,
-                    color: Colors.blue,
-                  ),
-                ),
-                Visibility(
-                    visible: _isBusy,
-                    child: CircularProgressIndicator(
-                      value: null,
-                    )),
-                AnimatedOpacity(
-                    opacity: _status.length > 0 ? 1.0 : 0.0,
-                    duration: Duration(milliseconds: 500),
-                    child: Text(
-                      _status,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 28,
-                        color:
-                            _status == SUCCESS_TEXT ? Colors.green : Colors.deepOrange,
-                      ),
-                    )),
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.0),
-                ),
-                Expanded(
-                  child: todoWidget(),
-                )
-              ],
+      ),
+      body: Container(
+        margin: const EdgeInsets.all(10.0),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              decoration: InputDecoration(hintText: INPUT_PLACEHOLDER),
+              controller: _txtControl,
+              enabled: !_isBusy,
             ),
-          ),
-        );
+            Padding(
+              padding: EdgeInsets.all(10.0),
+            ),
+            Visibility(
+              visible: !_isBusy,
+              child: IconButton(
+                icon: Icon(Icons.add),
+                tooltip: 'Add Todo',
+                onPressed: _todoTextActive ? submitTodoState : null,
+                iconSize: 48,
+                color: _todoTextActive ? Colors.blue : Colors.grey,
+              ),
+            ),
+            Visibility(
+                visible: _isBusy,
+                child: CircularProgressIndicator(
+                  value: null,
+                )),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.0),
+            ),
+            Expanded(
+              child: todoListWidget(),
+            )
+          ],
+        ),
+      ),
+    );
   }
 }
