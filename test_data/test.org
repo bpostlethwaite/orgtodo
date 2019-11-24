@@ -1,0 +1,15 @@
+#+DONE: TODO DONE
+
+* test0 header
+** TODO test1
+DEADLINE: <2018-11-20 Tue>
+** DONE test2
+CLOSED: [2019-01-17 Thu 10:39] SCHEDULED: <2019-01-17 Thu>
+* TODO test3
+  - bare note
+** TODO test4
+** DONE test5
+CLOSED: [2019-01-17 Thu 10:39] SCHEDULED: <2019-11-24 Sun>
+
+some text
+**** TODO test6

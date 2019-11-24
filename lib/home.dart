@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import './dropbox.dart';
 import 'dart:async';
 import './properties.dart';
-import './cloudapi.dart';
 import 'package:flutter/foundation.dart';
+import './utils.dart';
+import './store.dart';
 
 const String SUCCESS_TEXT = "Success!";
 const String FAILURE_TEXT = "Failure";
@@ -18,11 +19,13 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
+
 class _HomePageState extends State<HomePage> {
   bool _isBusy = false;
   bool _todoTextActive = false;
   Property dropboxOrgFilePath = new Property('dropboxOrgFilePath');
   Future<List<Todo>> todos;
+  Store store = Store(Dropbox());
 
   final TextEditingController _txtControl = new TextEditingController();
 
@@ -37,7 +40,7 @@ class _HomePageState extends State<HomePage> {
   initState() {
     super.initState();
     _txtControl.addListener(setTodoTextActive);
-    todos = fetchTodos();
+    todos = store.fetchTodos();
   }
 
   void setTodoTextActive() {
@@ -52,47 +55,33 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void submitTodoState() async {
-    var todoText = _txtControl.text;
+  void updateTodos(todoText, Future<Status> Function(String) updater) async {
     if (todoText.length > 0) {
       setState(() {
         _isBusy = true;
         todos = null;
       });
       try {
-        await Dropbox().addTodo(todoText);
-        todos = fetchTodos();
+        await updater(todoText);
+        todos = store.fetchTodos();
       } catch (e) {
         debugPrint(e.toString());
       }
       setState(() {
         _isBusy = false;
       });
-
-      // reset the input box
-      _txtControl.clear();
     }
   }
 
-  void markTodoDone(String todoText) async {
-    if (todoText.length > 0) {
-      setState(() {
-        _isBusy = true;
-        todos = null;
-      });
-      try {
-        await Dropbox().markTodoAsDone(todoText);
-        todos = fetchTodos();
-      } catch (e) {
-        debugPrint(e.toString());
-      }
-      setState(() {
-        _isBusy = false;
-      });
+  void addTodo() async {
+    var todoText = _txtControl.text;
+    updateTodos(todoText, store.addTodo);
+    // reset the input box
+    _txtControl.clear();
+  }
 
-      // reset the input box
-      _txtControl.clear();
-    }
+  void markTodoDone(String todoText) async {
+    updateTodos(todoText, store.markTodoAsDone);
   }
 
   Future<void> refreshTodos() async {
@@ -101,7 +90,7 @@ class _HomePageState extends State<HomePage> {
       todos = null;
     });
     setState(() {
-      todos = fetchTodos();
+      todos = store.fetchTodos();
       _isBusy = false;
     });
   }
@@ -193,7 +182,7 @@ class _HomePageState extends State<HomePage> {
               child: IconButton(
                 icon: Icon(Icons.add),
                 tooltip: 'Add Todo',
-                onPressed: _todoTextActive ? submitTodoState : null,
+                onPressed: _todoTextActive ? addTodo : null,
                 iconSize: 48,
                 color: _todoTextActive ? Colors.blue : Colors.grey,
               ),
